@@ -63,12 +63,12 @@ SELECT name FROM products WHERE name LIKE '%2%' AND quantity LIKE '%2%';
 8) Display name and price of all products with quantity between 4000 and 9000. 
    Order output in alphabetical order by name
 */
-SELECT name, price FROM products WHERE quantity >= 4000 AND quantity <= 9000 ORDER BY name;
+SELECT name, price FROM products WHERE quantity BETWEEN 4000 AND 9000 ORDER BY name;
 
 /* TASK 9
 9) Display all existing information about products having price 2.0, 1.1 or 1.25
 */
-SELECT * FROM products WHERE price = 2.0 OR price = 1.1 OR price = 1.25;
+SELECT * FROM products WHERE price IN(2.0, 1.1, 1.25);
 
 -------------------------------------
 -- Working with new table 'months':--

@@ -1,0 +1,314 @@
+CREATE / INSERT
+DROP / DELETE
+_ % LIKE
+
+-------------------------------------------
+REGEXP
+^       start line
+$       end line
+.       any one symblol
+[...]   many symbols
+[^...]  not these symbols
+|       or --SELECT * FROM users WHERE name REGEXP '^(test|prod)';
+
+*       0 or more symbols
++       1 or more symbols
+?       0 or 1 symbols
+
+{n} == n 
+{n,} >= n 
+{n,m} >=n and <= m 
+
+[:digit:] -- SELECT * FROM users WHERE name REGEXP '[0-9]';
+[:alpha:]
+[:alnum:]
+[:space:]
+[:upper:]
+[:lower:]
+
+CREATE TABLE users
+(id INT)
+
+---------------------------------------------
+CREATE TABLE users
+(id INT PRIMARY KEY AUTO_INCREMENT,
+name VARCHAR(100),
+email VARCHAR(100));
+
+INSERT INTO users (name, email) VALUES
+('Alice', 'alice@gmail.com'),
+('Alex', 'alex@company.com'),
+('Andrew', 'andrew@gmail.com'),
+('Bob', 'bob@yahoo.com'),
+('Brenda', 'brenda@gmail.com'),
+('Charlie', 'charlie@hotmail.com'),
+('Anna', 'anna@gmail.com'),
+('testUser', 'testuser@test.com'),
+('prodAdmin', 'prodadmin@company.com'),
+('Michael', 'mike@company.com'),
+('TestAccount', 'testaccount@demo.com');
+
+1. SELECT * FROM users WHERE name REGEXP '^A';
+2. SELECT * FROM users WHERE email REGEXP 'gmail\\.com$';
+
+INSERT INTO users (name, email) VALUES
+('User123', 'user123@gmail.com'),
+('Alpha007', 'alpha007@test.com');
+
+3. all strings containing numbers in name 
+SELECT * FROM users WHERE name REGEXP '[0-9]';
+SELECT * FROM users WHERE name REGEXP '[[:digit:]]';
+
+INSERT INTO users (name, email) VALUES
+('tset123', 'user113@gmail.com');
+INSERT INTO users (name, email) VALUES
+('tse123', 'user113@gmail.com');
+
+4. all string where name starts from 'test' or 'prod'
+SELECT * FROM users WHERE name REGEXP '^(test|prod)';
+SELECT * FROM users WHERE name REGEXP '^test|^prod';
+-- с квадратными скобками проверка на набор букв, 
+-- не обязательно в таком порядке и количестве
+SELECT * FROM users WHERE name REGEXP '^[test|^prod]'; 
+
+INSERT INTO users (name, email) VALUES
+('A123', 'code1@domain.com'),
+('A999', 'code2@domain.com'),
+('B123', 'code3@domain.com'),
+('A12', 'shortcode@domain.com');
+
+5. -- all users with name containing A and 3 digits
+SELECT * FROM users WHERE name REGEXP 'A.*[[:digit:]]{3}';
+SELECT * FROM users WHERE name REGEXP 'A[0-9]{3}';
+
+6. -- all names started from capitalized letter
+SELECT * FROM users WHERE name REGEXP BINARY '^[A-Z]';
+SELECT * FROM users WHERE name REGEXP BINARY '^[[:upper:]]';
+
+---------------------------------------------------
+CREATE DATABASE gr;
+CREATE TABLE IF NOT EXISTS gr.newproducts
+(productID INT AUTO_INCREMENT PRIMARY KEY);
+
+---------------------------------------------------
+SELECT * FROM products WHERE productCode IS NOT null;
+
+
+------------------------------------------------------
+-------------------- CLAUSE !!! ----------------------
+------------------------------------------------------
+SELECT
+FROM
+
+WHERE
+
+UPDATE
+
+JOIN
+
+GROUP BY
+
+HAVING -- for results of groupped data
+
+ORDER BY
+ORDER BY DESC
+
+LIMIT
+
+CREATE TABLE 
+ALTER TABLE -- to change table columns
+DROP TABLE
+---------------------------------------------------
+
+-- 3 most expensive products;
+SELECT * FROM products ORDER BY price DESC LIMIT 3;
+SELECT * FROM products WHERE quantity > 0 ORDER BY price DESC LIMIT 3;
+SELECT * FROM products WHERE price <> 99999.99 ORDER BY price DESC LIMIT 3;
+
+SELECT * FROM products ORDER BY price DESC LIMIT 1, 3;
+-- limit: 1st number skips amount of lines, 
+-- then pint 2nd number amount of lines.
+
+SELECT * FROM products WHERE name REGEXP 'pen ' ORDER BY price DESC, quantity DESC;
+-- sort by price, if price the same then by quantity
+-- глагол, что, откуда, как
+
+------------------------------------------------------
+--------------------- ALIAS !!! ----------------------
+------------------------------------------------------
+
+SELECT 2+2;
+SELECT 2+2 AS SUM;
+SELECT name AS 'Prduct name' FROM products;
+SELECT productID AS ID, productCode AS Code, name AS Description,
+price AS `Product price` FROM products ORDER BY `Product price`;
+-- WARNING use tilda-key brackets for name in sorting condition!!!
+-- for name after AS might me either ' or `
+
+-----------------------------------------
+--------------- CONCAT ------------------
+-----------------------------------------
+SELECT CONCAT(productID, name) FROM products;
+SELECT CONCAT(productID, ' - ', name) FROM products;
+SELECT CONCAT(productID, ' - ', name) AS `Full name` FROM products;
+
+-----------------------------------------
+-------------- DISTINCT -----------------
+-----------------------------------------
+SELECT DISTINCT price FROM products;
+SELECT DISTINCT price AS `Distinct price`, name, productCode FROM products;
+-- DISTINCT to all specified fields: price, name, productCode
+
+-----------------------------------------
+-------------- GROUP BY -----------------
+-----------------------------------------
+SELECT * FROM products GROUP BY productCode;
+-- группирует по указанному полю. Под капотом сгруппировано,
+-- но выводит только один из экземпляров
+
+-----------------------------------------
+------------ AGGREAGATE -----------------
+-----------------------------------------
+-- COUNT()
+
+SELECT COUNT(*) FROM products;
+SELECT COUNT(*) AS COUNT FROM products WHERE price >1.5;
+
+SUM()
+SELECT SUM(quantity) AS `Total quantity` FROM products;
+SELECT SUM(quantity) AS `Total quantity` FROM products WHERE productCode='PEN';
+
+SELECT COUNT(*) AS COUNT, SUM(quantity) AS `Total quantity` FROM products;
+SELECT COUNT(*) AS COUNT, SUM(price) AS `Total price` FROM products WHERE productCode = 'PEN';
+SELECT COUNT(*) AS COUNT, SUM(price) AS `Total price` FROM products WHERE productCode = 'PEC';
+
+SELECT COUNT(*) AS COUNT, SUM(price) AS `Total price` FROM products WHERE productCode = 'PEC' AND price <> 99999.99;
+
+-- MAX()
+SELECT MAX(quantity) AS `Max quantity` FROM products;
+SELECT MAX(quantity) AS `Max quantity` FROM products WHERE productCode = 'PEN';
+
+-- MIN()
+SELECT MIN(quantity) AS `Min quantity` FROM products;
+SELECT MIN(quantity) AS `Min quantity` FROM products WHERE price <> 99999.99;
+
+-- AVG()
+SELECT AVG(quantity) AS `Average quantity` FROM products;
+SELECT AVG(quantity) AS `Average quantity` FROM products WHERE price <> 99999.99;
+
+-- средне-взвешенная сумма
+-- not correct
+SELECT AVG(price) AS `Average price` FROM products WHERE price <> 99999.99;
+-- correct
+SELECT SUM(price * quantity) / SUM(quantity) AS `Average price` FROM products;
+
+SELECT SUM(price*quantity) AS `Total value` FROM products;
+
+--- STD() 
+--- standard deviation
+--- средне-квадратичное удаление
+SELECT STD(quantity) FROM products;
+
+--------------------------------------------
+--- GROUP_CONCAT()
+
+SELECT GROUP_CONCAT(name) FROM products;
+SELECT GROUP_CONCAT(productCode) FROM products;
+
+SELECT GROUP_CONCAT(name SEPARATOR ' * ') FROM products;
+SELECT GROUP_CONCAT(distinct productCode SEPARATOR ' * ') AS `Product codes` FROM products;
+
+--------------------
+SELECT price, GROUP_CONCAT(name) FROM products;
+
+SELECT productCode AS Code,
+MAX(price) AS `Max price`, 
+MIN(price) AS `Min price`, 
+SUM(price*quantity)/SUM(quantity) AS `Average price`, 
+SUM(quantity) AS `Total quantity`
+FROM products WHERE price <> 99999.99 GROUP BY productCode WITH ROLLUP;
+-- ROLLUP -> итого
+
+INSERT INTO products VALUES
+(NULL,'PEX', 'Pex blue',1111, 3.0),
+(NULL,'PEX', 'Pex red',1111, 3.0);
+
+SELECT productCode, 
+COUNT(*) AS Count,
+SUM(price*quantity)/SUM(quantity) AS `Average price`
+FROM products GROUP BY productCode;
+
+SELECT productCode, 
+COUNT(*) AS Count,
+SUM(price*quantity)/SUM(quantity) AS `Average price`
+FROM products GROUP BY productCode HAVING Count > 4;
+-- WHERE Count > 4 not works!!!
+-- for groupped values use HAVING!!!
+
+SELECT productCode, 
+COUNT(*) AS Count,
+SUM(price*quantity)/SUM(quantity) AS `Average price`
+FROM products WHERE price <> 99999.99 
+GROUP BY productCode HAVING Count > 4;
+
+----------------------------------------------
+CREATE TABLE orders 
+(id INT PRIMARY KEY AUTO_INCREMENT,
+customer_name VARCHAR(100),
+product VARCHAR(100),
+amount DECIMAL(10, 2));
+
+INSERT INTO orders (customer_name, product, amount) VALUES
+('Alice', 'Laptop', 1200.00),
+('Alice', 'Mouse', 25.00),
+('Bob', 'Keyboard', 50.00),
+('Bob', 'Laptop', 1000.00),
+('Charlie', 'Monitor', 300.00),
+('Charlie', 'Laptop', 1500.00),
+('Alice', 'Monitor', 280.00),
+('Bob', 'Mouse', 30.00);
+
+SELECT * FROM orders WHERE amount > 100;
+
+-- вывести имена с общей суммой покупок тех, кто купил больше чем
+-- на 1500
+SELECT customer_name,
+SUM(amount) AS `Total sum`
+FROM orders GROUP BY customer_name HAVING `Total sum` > 1500;
+
+SELECT customer_name,
+SUM(amount) AS `Total sum`
+FROM orders WHERE product = 'laptop'
+GROUP BY customer_name HAVING `Total sum` > 1000;
+
+SELECT customer_name,
+COUNT(product) AS expensive_orders
+FROM orders 
+WHERE amount > 250
+GROUP BY customer_name HAVING expensive_orders >= 2;
+
+/*
+What: customer_name, expensive_orders
+From: orders
+First filtration: amount > 250
+*/
+
+--
+-- создать отчет, где будут:
+-- продукт_ид, 
+-- описание продукта(код+название),
+-- цена единицы
+-- количество
+-- общая цена (кост) - количество умножить на цену единицы
+-- отсортировано по кост
+
+SELECT 
+productID AS ID, 
+CONCAT(productCode, ' - ', name) AS Description,
+price,
+quantity,
+price * quantity AS Cost
+FROM products WHERE price <> 99999.99
+ORDER BY Cost;
+
+ 
