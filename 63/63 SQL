@@ -1,0 +1,254 @@
+INSERT INTO products VALUES 
+(NULL,'MR2', 'Marker White2', 5000, 1.00),
+(NULL,'MR2', 'Marker Red2', 7000, 1.00),
+(NULL,'MR2', 'Marker Black2', 3500, 1.00);
+
+---------------------------------
+--1. all products group by product code
+--2. display only such product code for those products with
+---  same code have the same price
+
+SELECT 
+productCode, 
+SUM(quantity) AS total_quantity,
+MIN(price) AS min_price,
+MAX(PRICE) AS max_price,
+CAST(SUM(price * quantity) / SUM(quantity) AS DECIMAL(7,2)) AS average_price
+FROM products
+GROUP BY 1; -- group by 1-st column
+-----------------------------
+SELECT 
+productCode, 
+SUM(quantity) AS total_quantity,
+MIN(price) AS min_price,
+MAX(PRICE) AS max_price,
+CAST(SUM(price * quantity) / SUM(quantity) AS DECIMAL(7,2)) AS average_price
+FROM products
+GROUP BY productCode
+HAVING min_price = max_price;
+------------------------------
+SELECT 
+productCode, 
+SUM(quantity) AS total_quantity,
+MIN(price) AS min_price,
+MAX(PRICE) AS max_price,
+CAST(SUM(price * quantity) / SUM(quantity) AS DECIMAL(7,2)) AS average_price
+FROM products
+GROUP BY productCode
+HAVING COUNT(DISTINCT price) = 1;
+------------------------------
+SELECT 
+productCode, 
+SUM(quantity) AS total_quantity,
+MIN(price) AS min_price,
+MAX(PRICE) AS max_price,
+CAST(SUM(price * quantity) / SUM(quantity) AS DECIMAL(7,2)) AS average_price
+FROM products
+GROUP BY productCode
+HAVING STD(price) = 0;
+------------------------------------------------------
+------------------------------------------------------
+SELECT price * 2 FROM products;
+SELECT * FROM products;
+
+--UPDATE
+--syntax: UPDATE (table name) SET (column name) modification
+
+UPDATE products SET price = price * 1.1;
+
+UPDATE products SET quantity = quantity - 100
+WHERE quantity >= 5000;
+
+UPDATE products SET quantity = quantity + 100, price = price * 0.9
+WHERE name LIKE 'M%' AND price < 1.11;
+
+-----------------------------
+-- реляционные базы данных --
+-----------------------------
+CREATE TABLE suppliers
+(suppliersID INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(30) NOT NULL DEFAULT '',
+phone CHAR(10) NOT NULL DEFAULT '');
+
+DESCRIBE suppliers;
+
+INSERT INTO suppliers VALUES
+(101, 'A company', '1234567890'),
+(102, 'B company', '2345678901'),
+(103, 'C company', '3456789012');
+
+-------------------------------
+ALTER TABLE products ADD COLUMN supplierID INT UNSIGNED NOT NULL;
+-- add new column
+
+UPDATE products SET supplierID = 101;
+-- set all values in column
+
+UPDATE products SET supplierID = 102
+WHERE productCode = 'PEC' OR productCode = 'PEX';
+
+UPDATE products SET supplierID = 103
+WHERE productCode = 'MR2' OR name = 'Pen';
+
+ALTER TABLE products ADD FOREIGN KEY(supplierID) 
+REFERENCES suppliers(suppliersID);
+-- connect two tables via supplierID;
+
+SHOW CREATE TABLE products\G
+---------------------------------
+DELETE FROM suppliers WHERE suppliersID = 101;
+
+SELECT * FROM products, suppliers;
+-- сопоставил строчкам одной таблицы строчки другой таблицы
+
+SELECT * FROM products, suppliers
+WHERE products.supplierID = suppliers.suppliersID;
+
+SELECT suppliers.suppliersID, productID,
+productCode, suppliers.name AS `Supplier name`,
+products.name AS `Product name` 
+FROM products, suppliers 
+WHERE products.supplierID=suppliers.suppliersID;
+
+SELECT 
+suppliers.suppliersID, 
+productID,
+productCode, 
+suppliers.name AS `Supplier name`,
+products.name AS `Product name` 
+FROM products, suppliers 
+WHERE products.supplierID=suppliers.suppliersID 
+AND suppliers.name = 'C company';
+
+SELECT s.name AS `Supplier name`,
+AVG(p.price) AS `Average Product price`
+FROM suppliers s, products p
+WHERE price <> 99999.99 AND 
+s.suppliersID = p.supplierID GROUP BY s.suppliersID;
+
+--------------------------
+SELECT s.name AS `Supplier name`,
+s.phone AS `Supplier phone`,
+GROUP_CONCAT(p.name SEPARATOR ', ') AS `Product Names`
+FROM suppliers s, products p 
+WHERE s.suppliersID = p.supplierID
+GROUP BY s.suppliersID
+ORDER BY COUNT(p.productID) DESC 
+LIMIT 1;
+
+SELECT s.name AS `Supplier name`,
+s.phone AS `Supplier phone`,
+GROUP_CONCAT(p.name SEPARATOR ', ') AS `Product Names`
+FROM suppliers s, products p 
+WHERE s.suppliersID = p.supplierID
+GROUP BY s.suppliersID
+ORDER BY COUNT(p.productID) DESC;
+
+-- поставщик самой дешевой ручки, вывести его имя, телефон и цену ручки
+SELECT s.name AS supplier_name,
+s.phone AS supplier_phone,
+MIN(p.price) AS price
+FROM suppliers s, products p 
+WHERE s.suppliersID = p.supplierID AND p.productCode = 'PEN'
+ORDER BY MIN(p.price)
+LIMIT 1;
+
+-----------------------------------------
+SELECT s.name AS `Supplier name`,
+s.phone AS `Supplier Phone`,
+COUNT(DISTINCT productCode) AS `Number of product code`
+FROM suppliers s, products p 
+WHERE s.suppliersID = p.supplierID
+GROUP BY s.suppliersID 
+ORDER BY 3 DESC
+LIMIT 2;
+
+----------------------------------
+------------ JOIN ----------------
+----------------------------------
+SELECT s.name AS supplier_name,
+s.phone AS supplier_phone,
+p.price AS price
+FROM suppliers s -- main table
+JOIN products p ON s.suppliersID = p.supplierID -- bound with table by value
+WHERE p.productCode = 'PEN'
+ORDER BY p.price
+LIMIT 1;
+
+-----------------
+-- COPY TALBES --
+-----------------
+-- 1. Copy table structure without data
+CREATE TABLE new_pr LIKE products; -- no data for foreign key?
+SHOW COLUMNS FROM new_pr;
+SHOW CREATE TABLE new_pr;
+
+INSERT INTO new_pr VALUES 
+(NULL,'MR2', 'Marker White2', 5000, 1.00,1004);
+
+-- 2. Copy table without primary and foreign keys
+CREATE TABLE new_pro AS SELECT * FROM products;
+-- add primary key
+ALTER TABLE new_pro 
+ADD PRIMARY KEY (productID);
+
+-- 3. How to make full copy
+CREATE TABLE new_products LIKE products;
+INSERT INTO new_products SELECT * FROM products;
+
+-- 4. Full copy of only specific lines
+CREATE TABLE new_products_pen LIKE products;
+INSERT INTO new_products_pen SELECT * FROM products
+WHERE productCode = 'PEN';
+
+------------------------------------
+CREATE TABLE suppliers_new
+(supplierID INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(30) NOT NULL DEFAULT '',
+phone CHAR(10) NOT NULL DEFAULT '');
+
+INSERT INTO suppliers_new VALUES
+(101, 'A company', '1234567890'),
+(102, 'B company', '2345678901'),
+(103, 'C company', '3456789012');
+
+CREATE TABLE products_suppliers(
+    productID INT UNSIGNED NOT NULL, 
+    supplierID INT UNSIGNED NOT NULL,
+    PRIMARY KEY(productID, supplierID), 
+    FOREIGN KEY (productID) REFERENCES new_products(productID),
+    FOREIGN KEY (supplierID) REFERENCES suppliers_new(supplierID)
+);
+
+DESCRIBE products_suppliers;
+
+INSERT INTO products_suppliers VALUES 
+(1001, 101),
+(1002, 101),
+(1004, 102),
+(1012, 103);
+
+----------------------------------------
+SHOW CREATE TABLE new_products\G
+
+ALTER TABLE new_products DROP supplierID;
+
+-- how to delete foreign key
+ALTER TABLE products DROP FOREIGN KEY `products_ibfk_1`;
+ALTER TABLE products DROP supplierID;
+-------------------------------------
+
+-- вывод имя поставщика и имя продукта через JOIN
+SELECT
+s.name AS supplier_name,
+p.name AS product_name
+FROM products_suppliers x
+JOIN new_products p ON p.productID = x.productID
+JOIN suppliers_new s ON s.supplierID = x.supplierID;
+-- easier syntax if columns have the same name in different tables
+SELECT
+s.name AS supplier_name,
+p.name AS product_name
+FROM products_suppliers x
+JOIN new_products p USING(productID)
+JOIN suppliers_new s USING(supplierID);
