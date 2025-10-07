@@ -1,0 +1,352 @@
+mysql -u root -p
+USE carmiel_2025;
+
+SELECT * FROM new_products;
+
+CREATE TABLE product_details(
+    productID INT UNSIGNED NOT NULL PRIMARY KEY,
+    comment TEXT NULL,
+    FOREIGN KEY(productID) REFERENCES new_products(productID)
+);
+
+INSERT INTO product_details VALUES
+(1004, `comments`),
+(1007, `comments`),
+(1011, `comments`),
+(1048, `comments`);
+
+INSERT INTO product_details VALUES
+(1004, 'comments'),
+(1007, 'comments'),
+(1011, 'comments'),
+(1034, 'comments');
+
+SELECT 
+p.name AS `Product name`, 
+s.name AS `Supplier name`, 
+pd.comment AS Comments
+FROM products_suppliers AS ps
+JOIN new_products p USING (productID)
+JOIN suppliers_new s USING (supplierID)
+JOIN product_details pd USING (productID);
+
+SELECT 
+p.name AS `Product name`, 
+s.name AS `Supplier name`, 
+pd.comment AS Comments
+FROM products_suppliers AS ps
+JOIN new_products p USING (productID)
+JOIN suppliers_new s ON ps.supplierID = s.supplierID
+JOIN product_details pd USING (productID);
+-------------------------------------------
+-- NEW SHIT, ATTEMPT TO FIX ---------------
+CREATE TABLE t1
+(id INT PRIMARY KEY,
+comment VARCHAR(30));
+
+CREATE TABLE t2
+(id INT PRIMARY KEY,
+comment VARCHAR(30));
+
+INSERT INTO t1 VALUES
+(1, 'ID 1 in t1'),
+(2,'ID 2 in t1'),
+(3, 'ID 3 in t1');
+
+INSERT INTO t2 VALUES
+(2, 'ID 2 in t2'),
+(3,'ID 3 in t2'),
+(4, 'ID 4 in t2');
+
+SELECT * FROM t1 JOIN t2;
+SELECT * FROM t1 INNER JOIN t2;
+
+SELECT * FROM t1 JOIN t2 USING(id);
+SELECT * FROM t1 INNER JOIN t2 USING(id);
+
+SELECT * FROM t1 CROSS JOIN t2 USING(id);
+SELECT * FROM t1 CROSS JOIN t2;
+
+SELECT * FROM t1 LEFT JOIN t2 USING(id);
+SELECT * FROM t1 LEFT OUTER JOIN t2 USING(id);
+
+SELECT * FROM t1 RIGHT JOIN t2 USING(id);
+SELECT * FROM t2 LEFT JOIN t1 USING(id);
+-- NEW SHIT END ----------------------------
+--------------------------------------------
+drop table new_products;
+drop table suppliers_new;
+drop table products_suppliers;
+
+CREATE TABLE new_products1 LIKE products;
+INSERT INTO new_products SELECT * FROM products;
+
+CREATE TABLE suppliers_new1
+(supplierID INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(30) NOT NULL DEFAULT '',
+phone CHAR(10) NOT NULL DEFAULT '');
+
+
+INSERT INTO suppliers_new1 VALUES
+(101,'A company','1234567890'),
+(102,'B company','2345678901'),
+(103,'C company','3456789012');
+
+CREATE TABLE products_suppliers1(
+productID INT UNSIGNED NOT NULL,
+supplierID INT UNSIGNED NOT NULL,
+PRIMARY KEY(productID, supplierID),
+FOREIGN KEY(productID) REFERENCES new_products1(productID),
+FOREIGN KEY(supplierID) REFERENCES suppliers_new1(supplierID));
+
+INSERT INTO products_suppliers1 VALUES
+(1001,101),
+(1002,101),
+(1004,102),
+(1012,103);
+
+CREATE TABLE product_details1(
+productID INT UNSIGNED NOT NULL PRIMARY KEY,
+comment TEXT NULL,
+FOREIGN KEY (productID) REFERENCES new_products(productID));
+
+INSERT INTO product_details1 VALUES
+(1004, 'comments'),
+(1007, 'comments'),
+(1011, 'comments'),
+(1048, 'comments');
+-----------------------------------------
+SELECT p.name AS `Product name`, 
+s.name AS `Supplier name`, 
+pd.comment AS Comments
+FROM products_suppliers AS ps
+JOIN new_products p USING(productID)
+JOIN suppliers_new s USING(supplierID)
+JOIN product_details pd USING(productID);
+---------------------------------------------
+INSERT INTO suppliers_new VALUE
+(104,'D company','8834567890');
+
+-- all suppliers, including those who supply nothing
+-- product name, supplier name
+SELECT 
+productID, 
+productCode,
+p.name AS `Product name`, 
+s.name AS `Supplier name`, 
+phone
+FROM products_suppliers AS ps
+JOIN new_products p USING(productID)
+RIGHT JOIN suppliers_new s USING(supplierID)
+LEFT JOIN product_details pd USING(productID);
+
+SELECT 
+productID, 
+productCode,
+p.name AS `Product name`, 
+s.name AS `Supplier name`, 
+phone
+FROM suppliers_new AS s -- берем всех поставщиков
+LEFT JOIN products_suppliers ps USING(supplierID) -- цепляем к ним значения
+LEFT JOIN new_products p USING(productID);
+
+-------------------------------------------
+-- вывести товары, которые никто не поставляет
+SELECT 
+productID, 
+productCode,
+p.name AS `Product name`, 
+s.name AS `Supplier name`
+FROM new_products AS p
+LEFT JOIN products_suppliers ps USING(productID)
+LEFT JOIN suppliers_new s USING(supplierID)
+WHERE s.name IS NULL;
+
+SELECT p.* FROM new_products p 
+LEFT JOIN products_suppliers ps USING(productID)
+WHERE ps.productID IS NULL; -- works the same WHERE ps.supplierID IS NULL;
+
+-- вывести поставщиков, которые ничего не поставляют
+SELECT 
+productID, 
+productCode,
+p.name AS `Product name`, 
+s.name AS `Supplier name`
+FROM suppliers_new AS s
+LEFT JOIN products_suppliers ps USING(supplierID)
+LEFT JOIN new_products p USING(productID)
+WHERE p.name IS NULL;
+
+SELECT s.* FROM suppliers_new s 
+LEFT JOIN products_suppliers ps USING(supplierID)
+WHERE ps.supplierID IS NULL; -- wors the same WHERE ps.productID IS NULL;
+
+------------------------------------
+SELECT name, quantity
+FROM new_products 
+WHERE quantity <> 0
+ORDER BY quantity
+LIMIT 1;
+
+
+SELECT MIN(quantity) FROM new_products WHERE quantity <> 0;
+-- can put a request into other reqest
+SELECT name, quantity
+FROM new_products 
+WHERE quantity = (SELECT MIN(quantity) FROM new_products WHERE quantity <> 0);
+
+-- suppliers who supply nothing
+SELECT DISTINCT supplierID FROM products_suppliers;
+-- 
+SELECT S.* FROM suppliers_new s 
+WHERE supplierID NOT IN (SELECT DISTINCT supplierID FROM products_suppliers);
+
+INSERT INTO products_suppliers VALUES -- one value of 2 fields
+((SELECT productID FROM new_products WHERE name = 'Pex blue'),
+(SELECT supplierID FROM suppliers_new WHERE name = 'A company'));
+
+DELETE FROM products_suppliers WHERE supplierID = 
+(SELECT supplierID FROM suppliers_new WHERE name = 'A company');
+
+DELETE FROM products_suppliers WHERE supplierID IN 
+(SELECT supplierID FROM suppliers_new WHERE name = 'A company');
+
+------------------------------
+----------- time -------------
+------------------------------
+SELECT TIMESTAMP(14); -- YYYY MM DD HH MM SS
+SELECT TIMESTAMP(12); -- YY MM DD HH MM SS
+SELECT TIMESTAMP(10); -- YYYY MM DD HH MM
+SELECT TIMESTAMP(8); -- YYYY MM DD
+SELECT TIMESTAMP(6); -- YY MM DD
+SELECT TIMESTAMP(4); -- YY MM
+SELECT TIMESTAMP(2); -- YY
+
+SELECT NOW();
+SELECT CURDATE();
+SELECT CURTIME();
+
+CREATE TABLE patients(
+    patientID INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(30) NOT NULL DEFAULT '',
+    dateOfBirth DATE NOT NULL, 
+    lastVisitDate DATE NOT NULL,
+    nextVisitDate DATE NULL
+);
+-- yyyy-mm-dd
+INSERT INTO patients VALUES
+(101, 'name1', '1991-12-31', '2022-10-05', NULL),
+(NULL, 'name2', '2020-05-15', '2024-11-05', NULL),
+(NULL, 'name3', '2000-07-31', '2025-08-10', NULL),
+(NULL, 'name4', '2015-12-31', '2023-03-25', NULL);
+
+-- patients who visited from 2024-10-01 to now
+SELECT * FROM patients
+WHERE lastVisitDate BETWEEN '2024-10-01' AND CURDATE()
+ORDER BY lastVisitDate;
+
+INSERT INTO patients VALUES
+(105, 'name5', '1998-10-05', '2022-10-05', NULL);
+
+SELECT * FROM patients 
+WHERE MONTH(dateOfBirth) = MONTH(CURDATE())
+AND DAY(dateOfBirth) = DAY(CURDATE());
+
+INSERT INTO patients VALUES
+(106, 'name6', '2000-10-05', '2022-10-05', NULL),
+(107, 'name7', '2000-10-02', '2021-10-05', NULL);
+
+-- all patients who born in 2000 sort by month and then day
+SELECT * FROM patients 
+WHERE YEAR(dateOfBirth) = 2000
+ORDER BY MONTH(dateOfBirth), DAY(dateOfBirth);
+
+-- patients' age
+SELECT 
+name, 
+dateOfBirth, 
+TIMESTAMPDIFF(YEAR, dateOfBirth, CURDATE()) AS age 
+FROM patients ORDER BY age DESC, dateOfBirth;
+
+-- name and date last visit who didnt' visit 90+ days
+SELECT name, lastVisitDate,
+TIMESTAMPDIFF(DAY, lastVisitDate, CURDATE()) AS delay 
+FROM patients
+WHERE TIMESTAMPDIFF(DAY, lastVisitDate, CURDATE()) > 90;
+
+-- TO_DAYS() 01.01.0000
+SELECT name, lastVisitDate
+FROM patients
+WHERE TO_DAYS(CURDATE()) - TO_DAYS(lastVisitDate) > 90;
+
+-- DATE_SUB() DATE_ADD()
+SELECT * FROM patients 
+WHERE dateOfBirth >= DATE_SUB(CURDATE(), INTERVAL 18 YEAR);
+
+SELECT * FROM patients 
+WHERE dateOfBirth >= DATE_SUB(CURDATE(), INTERVAL 25 YEAR);
+
+SELECT *, DATE_SUB(CURDATE(), INTERVAL 25 YEAR) FROM patients;
+
+SELECT * FROM patients 
+WHERE TIMESTAMPDIFF(YEAR, dateOfBirth, CURDATE()) <= 25;
+
+UPDATE patients 
+SET nextVisitDate = DATE_ADD(CURDATE(), INTERVAL 2 MONTH)
+WHERE dateOfBirth <= DATE_SUB(CURDATE(), INTERVAL 25 YEAR);
+
+SELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW());
+SELECT YEAR(NOW()), MONTHNAME(NOW()), DAY(NOW());
+SELECT 
+YEAR(NOW()), 
+MONTHNAME(NOW()), 
+DAY(NOW()), 
+DAYNAME(NOW()),
+DAYOFWEEK(NOW());
+-----------------------------------
+-- временные таблицы, которые живут только во время сессии
+-----------------------------------
+CREATE TEMPORARY TABLE tab1
+(f1 INT);
+
+SHOW TABLES; -- не покажет
+DESC tab1; -- покажет
+------------------------------------
+-- PROCEDURE -----------------------
+------------------------------------
+CREATE PROCEDURE simpleProcedure()
+SELECT * FROM products;
+
+CALL simpleProcedure;
+
+DELIMITER //
+CREATE PROCEDURE combine()
+BEGIN
+SELECT * FROM products;
+SELECT NOW();
+END //
+DELIMITER ;
+
+CALL combine;
+
+DELIMITER //
+CREATE PROCEDURE reorderCost(IN reorderLevel INT, OUT cost DECIMAL(7,2))
+BEGIN
+SELECT IFNULL(sum(price*(reorderLevel - quantity)), 0)
+INTO cost FROM products WHERE quantity < reorderLevel;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION sayHello(name VARCHAR(20)) RETURNS VARCHAR(70)
+BEGIN
+RETURN CONCAT('Hello, ', name, '!');
+END//
+DELIMITER ;
+
+SELECT sayHello('carmiel 2025') as greeting;
+
+SELECT sayHello(name)
+FROM products;
+
+SHOW FUNCTION STATUS;
