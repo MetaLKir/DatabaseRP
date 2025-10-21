@@ -1,0 +1,146 @@
+use carmiel_2025
+
+db.getCollectionNamesj()
+
+show collections
+
+CREATE READ UPDATE DELETE --core actions
+
+=====CREATE=====
+
+db.pets.insertOne({name: 'Tom', type: "Cat", age: 77})
+
+db.pets.insertOne({name: 'Jerry', type: "Mouse", age: 74, IQ: 120})
+
+db.pets.insertOne({name: 'Tom', type: "Cat"})
+
+db.pets.insert({name: 'Tom', type: "Cat"})
+
+db.pets.insertMany([{name: "Ace", type: "Dog", age: 5}, {name: "Prince", type: "Dog", age: 3, breed: "Boxer"}])
+
+db.pets.insertOne({name: 'Jerry', type: "Mouse", dob: new Date("2000-10-19T16:00:00Z"), weight: 0.5, IQ: 120})
+
+================================================================
+Attributes:
+--capped boolean // determines of collection is cappped or not
+		    (after reaching cap, the new record rewrites the oldest one (the 1st)
+--size byte 	 // only when capped is true
+--max 		 // количство штук; only when capped is true
+
+db.createCollection("developers", {capped: true, size:500000, max: 10})
+
+db.developers.insertOne({name: "Alice", role: "Backend", experience: 5})
+
+db.developers.drop()
+
+
+=====READ=====
+db.pets.find() // shows everything from database
+
+db.pets.insertOne({_id: 1, name: 'Tom', type: "Cat"}) // add with specific ID
+
+db.pets.distinct("name")
+
+db.pets.find({type: "Dog"})
+db.pets.find({type: "Cat"})
+
+===AND=== // $and
+db.pets.find({$and: [{type: "Cat"}, {age: 77}]})
+
+===OR===     // $or
+===EXIST===  // $exists
+db.pets.find({$or: [{type: "Cat"}, {IQ: {$exists: 1}}]})
+
+db.pets.find({$or: [{type: "Cat"}, {IQ: {$exists: true}}]})
+
+db.pets.find({type: 'Dog'}, {_id: 0})	   // do not show ID
+db.pets.find({type: 'Dog'}, {_id: false})
+
+db.pets.find({type: 'Dog'}, {age: false})
+
+db.pets.find({type: 'Dog'}, {name: true, _id: false})  // only for id
+db.pets.find({type: 'Dog'}, {name: true, age: false})  // doesn't work
+// for non-id need to specify all fields
+
+db.pets.find({type: "Dog"}, {name:1, type:1, age:1, _id:0});
+
+
+=====COMPARE OPERATORS=====
+$lt	<
+$lte	<=
+$gt	>
+$gte	>=
+$ne	!=
+
+db.pets.find({age: {$lt:5}})
+
+db.pets.find({breed: {$exists: 1}})
+
+db.pets.insert({name: 'Kitty', type: "Cat", breed: "Persian"})
+
+db.pets.find({age: {$in: [3, 5]}})	// find in range
+
+=====Delete=====
+deleteOne
+deleteMany
+
+db.pets.deleteMany({})	// delete all
+
+db.pets.insert({name: 'Tomm', type: "Cat", age: 77})
+
+db.pets.deleteOne({name: "Tomm"})
+db.pets.deleteMany({name: "Tom"})
+
+
+=====Update=====
+db.pets.find({name: "Tom"})
+
+db.pets.updateOne({name: "Tom"}, {$set: {love: ["Whiskas", "Milk"]}})
+
+db.pets.insertOne({name: 'Tom', type: "Cat", Age: 69})
+
+db.pets.updateMany(
+{Age:{$exists:1}},
+[
+{$set:{age:{$ifNull:['$age','$Age']}}}, {$unset: 'Age'}
+])
+// changes field "Age" to "age": 
+// selects records with "Age", create "age", write into it from "Age", removes "Age"
+
+db.pets.findOneAndUpdate(
+{Age: {$exists: 1}},
+{$rename: {"Age":"age"}},
+{returnDocument: "after"}
+)
+
+=====INCREMENT=====
+=====$inc
+db.pets.updateMany({}, {$inc:{IQ:10}})
+// for all, increment IQ by 10 (or add if not exist)
+
+db.pets.updateMany({}, {$inc:{IQ:-10}})
+
+=====$push	// add elements to array
+db.pets.updateMany({type: "Dog"}, {$push:{love: "Cat"}})
+
+
+db.pets.updateMany({type: "Dog"}, {$push:{love: "Dog"}})
+
+=====$pop	// delete element from array
+db.pets.updateMany({type: "Dog"}, {$pop:{love: -1}}) // first element
+db.pets.updateMany({type: "Dog"}, {$pop:{love: 1}}) // last element
+
+=====$pull	// delete determined element from array
+db.pets.updateMany({type: "Dog"}, {$pull:{love: "Cat"}}) 
+
+
+=====SORTING=====
+db.pets.find().sort({age:-1})
+// order: -1 is decrement, 1 is increment
+
+db.pets.find({}, {_id: 0}).sort({age:-1})
+// show all without id, decrement order
+
+
+=====COUNT_DOCUMENTS=====
+db.pets.countDocuments({})
